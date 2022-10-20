@@ -1,66 +1,62 @@
-import { useState, useEffect } from "react";
-import { FaSignInAlt } from "react-icons/fa";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
+import GoalForm from "../components/GoalForm";
+import GoalItem from "../components/GoalItem";
+import Spinner from "../components/Spinner";
+import { getGoals, reset } from "../features/goals/goalSlice";
 
-function Login() {
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
+function Dashboard() {
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
 
-  const { email, password } = formData;
+  const { user } = useSelector((state) => state.auth);
+  const { goals, isLoading, isError, message } = useSelector(
+    (state) => state.goals
+  );
 
-  const onChange = (e) => {
-    setFormData((preState) => ({
-      ...preState,
-      [e.target.name]: e.target.value,
-    }));
-  };
+  useEffect(() => {
+    if (isError) {
+      console.log(message);
+    }
 
-  const submitForm = (e) => {
-    e.preventDefault();
-  };
+    if (!user) {
+      navigate("/login");
+    }
+
+    dispatch(getGoals());
+
+    return () => {
+      dispatch(reset());
+    };
+  }, [user, navigate, isError, message, dispatch]);
+
+  if (isLoading) {
+    return <Spinner />;
+  }
 
   return (
     <>
       <section className='heading'>
-        <h1>
-          <FaSignInAlt /> Login
-        </h1>
-        <p>Login and start setting goals</p>
-        <section className='form'>
-          <form onSubmit={submitForm}>
-            <div className='form-group'>
-              <input
-                type='text'
-                className='form-control'
-                id='email'
-                name='email'
-                value={email}
-                placeholder='Enter your Email'
-                onChange={onChange}
-              />
-            </div>
-            <div className='form-group'>
-              <input
-                type='password'
-                className='form-control'
-                id='password'
-                name='password'
-                value={password}
-                placeholder='Enter your passworwd'
-                onChange={onChange}
-              />
-            </div>
-            <div className='form-group'>
-              <button type='submit' className='btn btn-block'>
-                Submit
-              </button>
-            </div>
-          </form>
-        </section>
+        <h1>Welcome {user && user.name}</h1>
+        <p>Goals Dashboard</p>
+      </section>
+
+      <GoalForm />
+
+      <section className='content'>
+        {goals.length > 0 ? (
+          <div className='goals'>
+            {goals.map((goal) => (
+              <GoalItem key={goal._id} goal={goal} />
+            ))}
+          </div>
+        ) : (
+          <h3>You have not set any goals</h3>
+        )}
       </section>
     </>
   );
 }
 
-export default Login;
+export default Dashboard;
